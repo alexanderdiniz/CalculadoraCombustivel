@@ -1,0 +1,1554 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora Avançada de Custos de Combustível</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --accent: #e74c3c;
+            --light: #ecf0f1;
+            --dark: #2c3e50;
+            --success: #2ecc71;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --bg-color: #f5f7fa;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --border-color: #dddddd;
+        }
+
+        .dark-theme {
+            --primary: #3498db;
+            --secondary: #2c3e50;
+            --accent: #e74c3c;
+            --light: #34495e;
+            --dark: #ecf0f1;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --danger: #c0392b;
+            --bg-color: #1a1a1a;
+            --card-bg: #2d2d2d;
+            --text-color: #e0e0e0;
+            --border-color: #444444;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        }
+        
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 2rem 0;
+            text-align: center;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+        
+        .header-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .theme-toggle, .print-btn, .clear-all-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+        
+        .theme-toggle:hover, .print-btn:hover, .clear-all-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .app-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+        
+        @media (max-width: 900px) {
+            .app-container {
+                grid-template-columns: 1fr;
+            }
+            
+            header {
+                padding: 1.5rem 0;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .header-controls {
+                position: static;
+                justify-content: center;
+                margin-top: 1rem;
+            }
+        }
+        
+        .card {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border-color);
+        }
+        
+        .card-title {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--primary);
+            border-bottom: 2px solid var(--light);
+            padding-bottom: 0.5rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.2rem;
+            position: relative;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+        
+        .input-with-clear {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            font-size: 1rem;
+            transition: border 0.3s;
+            background-color: var(--card-bg);
+            color: var(--text-color);
+        }
+        
+        .clear-field {
+            position: absolute;
+            right: 10px;
+            background: none;
+            border: none;
+            color: #7f8c8d;
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 0;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.6;
+            transition: opacity 0.3s;
+        }
+        
+        .clear-field:hover {
+            opacity: 1;
+            color: var(--danger);
+        }
+        
+        input:focus, select:focus {
+            border-color: var(--secondary);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+        
+        .btn {
+            display: inline-block;
+            background: var(--secondary);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-align: center;
+        }
+        
+        .btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-block {
+            display: block;
+            width: 100%;
+        }
+        
+        .btn-success {
+            background: var(--success);
+        }
+        
+        .btn-success:hover {
+            background: #27ae60;
+        }
+        
+        .btn-warning {
+            background: var(--warning);
+        }
+        
+        .btn-warning:hover {
+            background: #e67e22;
+        }
+        
+        .btn-danger {
+            background: var(--danger);
+        }
+        
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+        
+        .btn-info {
+            background: var(--primary);
+        }
+        
+        .btn-info:hover {
+            background: #2c3e50;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        
+        @media (max-width: 600px) {
+            .results-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+        }
+        
+        .result-item {
+            background: var(--light);
+            padding: 1rem;
+            border-radius: 5px;
+            text-align: center;
+        }
+        
+        .result-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+        
+        .result-label {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+        }
+        
+        .history-item {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .history-item:last-child {
+            border-bottom: none;
+        }
+        
+        .history-info {
+            flex: 1;
+        }
+        
+        .history-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .chart-container {
+            height: 300px;
+            margin-top: 1rem;
+        }
+        
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 1rem;
+            overflow-x: auto;
+        }
+        
+        .tab {
+            padding: 0.8rem 1.5rem;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+        
+        .tab.active {
+            border-bottom: 3px solid var(--secondary);
+            color: var(--secondary);
+            font-weight: 600;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .vehicle-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .vehicle-item {
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: #7f8c8d;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            border-radius: 5px;
+            color: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            transform: translateX(150%);
+            transition: transform 0.3s;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        .notification.success {
+            background: var(--success);
+        }
+        
+        .notification.error {
+            background: var(--danger);
+        }
+        
+        .cost-breakdown {
+            margin-top: 1.5rem;
+        }
+        
+        .cost-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .cost-item:last-child {
+            border-bottom: none;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            overflow-x: auto;
+            display: block;
+        }
+        
+        .comparison-table th, .comparison-table td {
+            padding: 0.8rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .comparison-table th {
+            background: var(--light);
+            font-weight: 600;
+        }
+        
+        .comparison-table tr:hover {
+            background: var(--light);
+        }
+        
+        .mobile-menu {
+            display: none;
+            background: var(--card-bg);
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        
+        .mobile-menu select {
+            width: 100%;
+            margin-bottom: 0.5rem;
+        }
+        
+        @media (max-width: 768px) {
+            .tabs {
+                display: none;
+            }
+            
+            .mobile-menu {
+                display: block;
+            }
+        }
+        
+        .print-only {
+            display: none;
+        }
+        
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            
+            .print-only {
+                display: block;
+            }
+            
+            .card {
+                box-shadow: none;
+                border: 1px solid #000;
+            }
+            
+            .app-container {
+                display: block;
+            }
+            
+            .btn {
+                display: none;
+            }
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Calculadora de Custos de Combustível</h1>
+            <p class="subtitle">Calcule, compare e gerencie os custos da sua viagem</p>
+            <div class="header-controls no-print">
+                <button class="theme-toggle" id="themeToggle">🌙</button>
+                <button class="print-btn" id="printBtn">📄</button>
+                <button class="clear-all-btn" id="clearAllBtn" title="Limpar Todos os Campos">🗑️</button>
+            </div>
+        </header>
+        
+        <div class="mobile-menu no-print">
+            <select id="mobileTabSelect">
+                <option value="calculator">Calculadora</option>
+                <option value="history">Histórico</option>
+                <option value="vehicles">Veículos</option>
+                <option value="comparison">Comparação</option>
+                <option value="reports">Relatórios</option>
+            </select>
+        </div>
+        
+        <div class="app-container">
+            <div class="left-panel">
+                <div class="card">
+                    <h2 class="card-title">Dados da Viagem</h2>
+                    
+                    <div class="form-group">
+                        <label for="distance">Distância da Viagem (km)</label>
+                        <div class="input-with-clear">
+                            <input type="number" id="distance" min="0" step="0.1" placeholder="Ex: 350">
+                            <button class="clear-field" data-target="distance">×</button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="vehicle">Veículo</label>
+                        <select id="vehicle">
+                            <option value="">Selecione um veículo</option>
+                        </select>
+                        <div class="form-group" style="margin-top: 0.5rem;">
+                            <button class="btn btn-warning" id="manageVehicles">Gerenciar Veículos</button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="fuelType">Tipo de Combustível</label>
+                        <select id="fuelType">
+                            <option value="gasolina">Gasolina</option>
+                            <option value="etanol">Etanol</option>
+                            <option value="diesel">Diesel</option>
+                            <option value="gnv">GNV</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="fuelPrice">Preço do Combustível (R$/L ou R$/m³)</label>
+                        <div class="input-with-clear">
+                            <input type="number" id="fuelPrice" min="0" step="0.01" placeholder="Ex: 5.75">
+                            <button class="clear-field" data-target="fuelPrice">×</button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="consumption">Consumo do Veículo (km/L)</label>
+                        <div class="input-with-clear">
+                            <input type="number" id="consumption" min="0" step="0.1" placeholder="Ex: 12.5">
+                            <button class="clear-field" data-target="consumption">×</button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="tolls">Pedágios (R$)</label>
+                        <div class="input-with-clear">
+                            <input type="number" id="tolls" min="0" step="0.01" placeholder="Ex: 45.50" value="0">
+                            <button class="clear-field" data-target="tolls">×</button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="otherCosts">Outros Custos (R$)</label>
+                        <div class="input-with-clear">
+                            <input type="number" id="otherCosts" min="0" step="0.01" placeholder="Ex: 30.00" value="0">
+                            <button class="clear-field" data-target="otherCosts">×</button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="passengers">Número de Passageiros</label>
+                        <div class="input-with-clear">
+                            <input type="number" id="passengers" min="1" value="1">
+                            <button class="clear-field" data-target="passengers">×</button>
+                        </div>
+                    </div>
+                    
+                    <div class="action-buttons">
+                        <button class="btn btn-success btn-block" id="calculateBtn">Calcular Custos</button>
+                        <button class="btn btn-info" id="clearFormBtn">Limpar Formulário</button>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h2 class="card-title">Resultados</h2>
+                    
+                    <div class="results-grid">
+                        <div class="result-item">
+                            <div class="result-value" id="fuelCost">R$ 0,00</div>
+                            <div class="result-label">Custo Combustível</div>
+                        </div>
+                        <div class="result-item">
+                            <div class="result-value" id="fuelNeeded">0 L</div>
+                            <div class="result-label">Combustível Necessário</div>
+                        </div>
+                        <div class="result-item">
+                            <div class="result-value" id="totalCost">R$ 0,00</div>
+                            <div class="result-label">Custo Total</div>
+                        </div>
+                        <div class="result-item">
+                            <div class="result-value" id="costPerPerson">R$ 0,00</div>
+                            <div class="result-label">Custo por Pessoa</div>
+                        </div>
+                    </div>
+                    
+                    <div class="cost-breakdown">
+                        <h3 style="margin-bottom: 1rem;">Detalhamento de Custos</h3>
+                        <div class="cost-item">
+                            <span>Combustível:</span>
+                            <span id="breakdownFuel">R$ 0,00</span>
+                        </div>
+                        <div class="cost-item">
+                            <span>Pedágios:</span>
+                            <span id="breakdownTolls">R$ 0,00</span>
+                        </div>
+                        <div class="cost-item">
+                            <span>Outros custos:</span>
+                            <span id="breakdownOther">R$ 0,00</span>
+                        </div>
+                        <div class="cost-item">
+                            <span>Total:</span>
+                            <span id="breakdownTotal">R$ 0,00</span>
+                        </div>
+                    </div>
+                    
+                    <div class="action-buttons">
+                        <button class="btn btn-block" id="saveTrip">Salvar Viagem</button>
+                        <button class="btn btn-warning" id="clearResultsBtn">Limpar Resultados</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="right-panel">
+                <div class="card">
+                    <div class="tabs no-print">
+                        <div class="tab active" data-tab="calculator">Calculadora</div>
+                        <div class="tab" data-tab="history">Histórico</div>
+                        <div class="tab" data-tab="vehicles">Veículos</div>
+                        <div class="tab" data-tab="comparison">Comparação</div>
+                        <div class="tab" data-tab="reports">Relatórios</div>
+                    </div>
+                    
+                    <div class="tab-content active" id="calculator-content">
+                        <div class="print-only">
+                            <h2>Relatório de Viagem</h2>
+                            <p id="printDate"></p>
+                        </div>
+                        <h3 class="card-title">Instruções</h3>
+                        <p>Preencha os dados da viagem no painel esquerdo e clique em "Calcular Custos" para ver os resultados.</p>
+                        <p>Você pode salvar a viagem para acompanhar seu histórico de gastos.</p>
+                    </div>
+                    
+                    <div class="tab-content" id="history-content">
+                        <h3 class="card-title">Histórico de Viagens</h3>
+                        <div id="historyList" class="vehicle-list">
+                            <div class="empty-state">
+                                <p>Nenhuma viagem salva ainda</p>
+                                <p>Calcule e salve sua primeira viagem!</p>
+                            </div>
+                        </div>
+                        <div class="action-buttons">
+                            <button class="btn btn-danger" id="clearHistoryBtn">Limpar Histórico</button>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-content" id="vehicles-content">
+                        <h3 class="card-title">Meus Veículos</h3>
+                        <div id="vehicleList" class="vehicle-list">
+                            <div class="empty-state">
+                                <p>Nenhum veículo cadastrado</p>
+                                <p>Adicione seu primeiro veículo!</p>
+                            </div>
+                        </div>
+                        
+                        <div class="action-buttons">
+                            <button class="btn btn-success" id="addVehicleBtn">Adicionar Veículo</button>
+                            <button class="btn btn-danger" id="clearVehiclesBtn">Limpar Todos os Veículos</button>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-content" id="comparison-content">
+                        <h3 class="card-title">Comparação de Combustíveis</h3>
+                        <div class="chart-container">
+                            <canvas id="comparisonChart"></canvas>
+                        </div>
+                        <table class="comparison-table">
+                            <thead>
+                                <tr>
+                                    <th>Combustível</th>
+                                    <th>Preço</th>
+                                    <th>Custo Total</th>
+                                    <th>Economia</th>
+                                </tr>
+                            </thead>
+                            <tbody id="comparisonTable">
+                                <!-- Dados de comparação serão inseridos aqui -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="tab-content" id="reports-content">
+                        <h3 class="card-title">Relatórios e Estatísticas</h3>
+                        <div class="chart-container">
+                            <canvas id="reportsChart"></canvas>
+                        </div>
+                        <div class="results-grid" style="margin-top: 1.5rem;">
+                            <div class="result-item">
+                                <div class="result-value" id="totalTrips">0</div>
+                                <div class="result-label">Total de Viagens</div>
+                            </div>
+                            <div class="result-item">
+                                <div class="result-value" id="totalDistance">0 km</div>
+                                <div class="result-label">Distância Total</div>
+                            </div>
+                            <div class="result-item">
+                                <div class="result-value" id="totalSpent">R$ 0,00</div>
+                                <div class="result-label">Total Gasto</div>
+                            </div>
+                            <div class="result-item">
+                                <div class="result-value" id="avgCost">R$ 0,00</div>
+                                <div class="result-label">Custo Médio</div>
+                            </div>
+                        </div>
+                        <div class="action-buttons">
+                            <button class="btn btn-danger" id="clearAllDataBtn">Limpar Todos os Dados</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="notification" class="notification"></div>
+    
+    <!-- Modal para adicionar/editar veículo -->
+    <div id="vehicleModal" class="modal">
+        <div class="card" style="width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto;">
+            <h2 class="card-title" id="modalTitle">Adicionar Veículo</h2>
+            
+            <div class="form-group">
+                <label for="vehicleName">Nome do Veículo</label>
+                <div class="input-with-clear">
+                    <input type="text" id="vehicleName" placeholder="Ex: Fiat Uno">
+                    <button class="clear-field" data-target="vehicleName">×</button>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="vehicleFuelType">Tipo de Combustível</label>
+                <select id="vehicleFuelType">
+                    <option value="gasolina">Gasolina</option>
+                    <option value="etanol">Etanol</option>
+                    <option value="diesel">Diesel</option>
+                    <option value="gnv">GNV</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="vehicleConsumption">Consumo (km/L ou km/m³)</label>
+                <div class="input-with-clear">
+                    <input type="number" id="vehicleConsumption" min="0" step="0.1" placeholder="Ex: 12.5">
+                    <button class="clear-field" data-target="vehicleConsumption">×</button>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                <button class="btn btn-danger" id="cancelVehicle" style="flex: 1;">Cancelar</button>
+                <button class="btn btn-success" id="saveVehicle" style="flex: 1;">Salvar</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Dados da aplicação
+        let vehicles = JSON.parse(localStorage.getItem('vehicles')) || [];
+        let trips = JSON.parse(localStorage.getItem('trips')) || [];
+        let currentVehicleId = null;
+        let isDarkTheme = localStorage.getItem('darkTheme') === 'true';
+        
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+            setupEventListeners();
+            loadVehicles();
+            loadTrips();
+            updateReports();
+            applyTheme();
+        });
+        
+        function initializeApp() {
+            // Configurar preços padrão de combustível
+            if (!localStorage.getItem('fuelPrices')) {
+                const defaultPrices = {
+                    gasolina: 5.75,
+                    etanol: 4.20,
+                    diesel: 4.50,
+                    gnv: 3.80
+                };
+                localStorage.setItem('fuelPrices', JSON.stringify(defaultPrices));
+            }
+            
+            // Carregar preços nos campos
+            const fuelPrices = JSON.parse(localStorage.getItem('fuelPrices'));
+            document.getElementById('fuelType').addEventListener('change', function() {
+                const selectedFuel = this.value;
+                document.getElementById('fuelPrice').value = fuelPrices[selectedFuel] || '';
+            });
+            
+            // Disparar evento change para carregar o preço inicial
+            document.getElementById('fuelType').dispatchEvent(new Event('change'));
+        }
+        
+        function setupEventListeners() {
+            // Botões principais
+            document.getElementById('calculateBtn').addEventListener('click', calculateCosts);
+            document.getElementById('saveTrip').addEventListener('click', saveTrip);
+            document.getElementById('manageVehicles').addEventListener('click', showVehicleModal);
+            document.getElementById('addVehicleBtn').addEventListener('click', showVehicleModal);
+            
+            // Controles de tema e impressão
+            document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+            document.getElementById('printBtn').addEventListener('click', generatePDF);
+            
+            // Botões de limpar dados
+            document.getElementById('clearAllBtn').addEventListener('click', clearAllData);
+            document.getElementById('clearFormBtn').addEventListener('click', clearForm);
+            document.getElementById('clearResultsBtn').addEventListener('click', clearResults);
+            document.getElementById('clearHistoryBtn').addEventListener('click', clearHistory);
+            document.getElementById('clearVehiclesBtn').addEventListener('click', clearVehicles);
+            document.getElementById('clearAllDataBtn').addEventListener('click', clearAllData);
+            
+            // Botões de limpar campos individuais
+            document.querySelectorAll('.clear-field').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const targetId = this.getAttribute('data-target');
+                    clearField(targetId);
+                });
+            });
+            
+            // Navegação por tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    switchTab(this.getAttribute('data-tab'));
+                });
+            });
+            
+            // Navegação mobile
+            document.getElementById('mobileTabSelect').addEventListener('change', function() {
+                switchTab(this.value);
+            });
+            
+            // Modal de veículos
+            document.getElementById('cancelVehicle').addEventListener('click', hideVehicleModal);
+            document.getElementById('saveVehicle').addEventListener('click', saveVehicle);
+            
+            // Atualizar consumo quando selecionar um veículo
+            document.getElementById('vehicle').addEventListener('change', function() {
+                const vehicleId = this.value;
+                if (vehicleId) {
+                    const vehicle = vehicles.find(v => v.id == vehicleId);
+                    if (vehicle) {
+                        document.getElementById('consumption').value = vehicle.consumption;
+                        document.getElementById('fuelType').value = vehicle.fuelType;
+                        document.getElementById('fuelType').dispatchEvent(new Event('change'));
+                    }
+                }
+            });
+        }
+        
+        // Funções para limpar dados
+        function clearField(fieldId) {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                field.value = '';
+                if (fieldId === 'tolls' || fieldId === 'otherCosts') {
+                    field.value = '0';
+                } else if (fieldId === 'passengers') {
+                    field.value = '1';
+                }
+                field.focus();
+            }
+        }
+        
+        function clearForm() {
+            const fieldsToClear = [
+                'distance', 'fuelPrice', 'consumption', 
+                'tolls', 'otherCosts', 'passengers'
+            ];
+            
+            fieldsToClear.forEach(fieldId => {
+                clearField(fieldId);
+            });
+            
+            document.getElementById('vehicle').selectedIndex = 0;
+            document.getElementById('fuelType').selectedIndex = 0;
+            document.getElementById('fuelType').dispatchEvent(new Event('change'));
+            
+            showNotification('Formulário limpo com sucesso', 'success');
+        }
+        
+        function clearResults() {
+            document.getElementById('fuelCost').textContent = 'R$ 0,00';
+            document.getElementById('fuelNeeded').textContent = '0 L';
+            document.getElementById('totalCost').textContent = 'R$ 0,00';
+            document.getElementById('costPerPerson').textContent = 'R$ 0,00';
+            
+            document.getElementById('breakdownFuel').textContent = 'R$ 0,00';
+            document.getElementById('breakdownTolls').textContent = 'R$ 0,00';
+            document.getElementById('breakdownOther').textContent = 'R$ 0,00';
+            document.getElementById('breakdownTotal').textContent = 'R$ 0,00';
+            
+            showNotification('Resultados limpos com sucesso', 'success');
+        }
+        
+        function clearHistory() {
+            if (confirm('Tem certeza que deseja limpar todo o histórico de viagens?')) {
+                trips = [];
+                localStorage.setItem('trips', JSON.stringify(trips));
+                loadTrips();
+                updateReports();
+                showNotification('Histórico limpo com sucesso', 'success');
+            }
+        }
+        
+        function clearVehicles() {
+            if (confirm('Tem certeza que deseja limpar todos os veículos cadastrados?')) {
+                vehicles = [];
+                localStorage.setItem('vehicles', JSON.stringify(vehicles));
+                loadVehicles();
+                showNotification('Veículos limpos com sucesso', 'success');
+            }
+        }
+        
+        function clearAllData() {
+            if (confirm('Tem certeza que deseja limpar TODOS os dados da aplicação? Esta ação não pode ser desfeita.')) {
+                // Limpar formulário
+                clearForm();
+                clearResults();
+                
+                // Limpar dados armazenados
+                trips = [];
+                vehicles = [];
+                localStorage.setItem('trips', JSON.stringify(trips));
+                localStorage.setItem('vehicles', JSON.stringify(vehicles));
+                
+                // Resetar preços padrão
+                const defaultPrices = {
+                    gasolina: 5.75,
+                    etanol: 4.20,
+                    diesel: 4.50,
+                    gnv: 3.80
+                };
+                localStorage.setItem('fuelPrices', JSON.stringify(defaultPrices));
+                
+                // Atualizar interface
+                loadVehicles();
+                loadTrips();
+                updateReports();
+                
+                showNotification('Todos os dados foram limpos com sucesso', 'success');
+            }
+        }
+        
+        function switchTab(tabName) {
+            // Atualizar tabs desktop
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab[data-tab="' + tabName + '"]').forEach(t => t.classList.add('active'));
+            
+            // Atualizar conteúdo das tabs
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById(tabName + '-content').classList.add('active');
+            
+            // Atualizar seleção mobile
+            document.getElementById('mobileTabSelect').value = tabName;
+            
+            // Atualizar gráficos quando necessário
+            if (tabName === 'comparison') {
+                updateComparison();
+            } else if (tabName === 'reports') {
+                updateReports();
+            }
+        }
+        
+        function toggleTheme() {
+            isDarkTheme = !isDarkTheme;
+            localStorage.setItem('darkTheme', isDarkTheme);
+            applyTheme();
+        }
+        
+        function applyTheme() {
+            if (isDarkTheme) {
+                document.body.classList.add('dark-theme');
+                document.getElementById('themeToggle').textContent = '☀️';
+            } else {
+                document.body.classList.remove('dark-theme');
+                document.getElementById('themeToggle').textContent = '🌙';
+            }
+            
+            // Atualizar cores dos gráficos
+            if (window.comparisonChart) {
+                window.comparisonChart.destroy();
+                updateComparison();
+            }
+            
+            if (window.reportsChart) {
+                window.reportsChart.destroy();
+                updateReports();
+            }
+        }
+        
+        function generatePDF() {
+            // Usando html2canvas e jsPDF para gerar o PDF
+            const { jsPDF } = window.jspdf;
+            
+            // Elemento a ser capturado
+            const element = document.querySelector('.app-container');
+            
+            // Mostrar data no relatório
+            document.getElementById('printDate').textContent = 'Gerado em: ' + new Date().toLocaleDateString('pt-BR');
+            
+            html2canvas(element, {
+                scale: 2,
+                useCORS: true,
+                logging: false,
+                windowWidth: element.scrollWidth,
+                windowHeight: element.scrollHeight
+            }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const imgWidth = 210;
+                const pageHeight = 295;
+                const imgHeight = canvas.height * imgWidth / canvas.width;
+                let heightLeft = imgHeight;
+                let position = 0;
+                
+                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+                
+                while (heightLeft >= 0) {
+                    position = heightLeft - imgHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                }
+                
+                pdf.save('relatorio-viagem-' + new Date().toISOString().slice(0, 10) + '.pdf');
+            });
+        }
+        
+        function calculateCosts() {
+            // Obter valores dos campos
+            const distance = parseFloat(document.getElementById('distance').value);
+            const fuelPrice = parseFloat(document.getElementById('fuelPrice').value);
+            const consumption = parseFloat(document.getElementById('consumption').value);
+            const tolls = parseFloat(document.getElementById('tolls').value) || 0;
+            const otherCosts = parseFloat(document.getElementById('otherCosts').value) || 0;
+            const passengers = parseInt(document.getElementById('passengers').value) || 1;
+            
+            // Validar entradas
+            if (!distance || !fuelPrice || !consumption) {
+                showNotification('Preencha todos os campos obrigatórios', 'error');
+                return;
+            }
+            
+            // Calcular custos
+            const fuelNeeded = distance / consumption;
+            const fuelCost = fuelNeeded * fuelPrice;
+            const totalCost = fuelCost + tolls + otherCosts;
+            const costPerPerson = totalCost / passengers;
+            
+            // Atualizar resultados
+            document.getElementById('fuelCost').textContent = `R$ ${fuelCost.toFixed(2)}`;
+            document.getElementById('fuelNeeded').textContent = `${fuelNeeded.toFixed(2)} L`;
+            document.getElementById('totalCost').textContent = `R$ ${totalCost.toFixed(2)}`;
+            document.getElementById('costPerPerson').textContent = `R$ ${costPerPerson.toFixed(2)}`;
+            
+            // Atualizar detalhamento
+            document.getElementById('breakdownFuel').textContent = `R$ ${fuelCost.toFixed(2)}`;
+            document.getElementById('breakdownTolls').textContent = `R$ ${tolls.toFixed(2)}`;
+            document.getElementById('breakdownOther').textContent = `R$ ${otherCosts.toFixed(2)}`;
+            document.getElementById('breakdownTotal').textContent = `R$ ${totalCost.toFixed(2)}`;
+            
+            // Atualizar comparação
+            updateComparison();
+        }
+        
+        function saveTrip() {
+            // Validar se os cálculos foram feitos
+            const totalCost = document.getElementById('totalCost').textContent;
+            if (totalCost === 'R$ 0,00') {
+                showNotification('Calcule os custos antes de salvar', 'error');
+                return;
+            }
+            
+            // Obter dados da viagem
+            const distance = parseFloat(document.getElementById('distance').value);
+            const fuelPrice = parseFloat(document.getElementById('fuelPrice').value);
+            const consumption = parseFloat(document.getElementById('consumption').value);
+            const fuelType = document.getElementById('fuelType').value;
+            const tolls = parseFloat(document.getElementById('tolls').value) || 0;
+            const otherCosts = parseFloat(document.getElementById('otherCosts').value) || 0;
+            const passengers = parseInt(document.getElementById('passengers').value) || 1;
+            
+            const vehicleSelect = document.getElementById('vehicle');
+            const vehicleId = vehicleSelect.value;
+            const vehicleName = vehicleSelect.options[vehicleSelect.selectedIndex].text;
+            
+            // Criar objeto da viagem
+            const trip = {
+                id: Date.now(),
+                date: new Date().toISOString(),
+                distance,
+                fuelPrice,
+                consumption,
+                fuelType,
+                tolls,
+                otherCosts,
+                passengers,
+                vehicleId,
+                vehicleName,
+                fuelCost: parseFloat(document.getElementById('fuelCost').textContent.replace('R$ ', '').replace(',', '.')),
+                totalCost: parseFloat(document.getElementById('totalCost').textContent.replace('R$ ', '').replace(',', '.'))
+            };
+            
+            // Adicionar ao array e salvar
+            trips.push(trip);
+            localStorage.setItem('trips', JSON.stringify(trips));
+            
+            // Atualizar interface
+            loadTrips();
+            updateReports();
+            
+            showNotification('Viagem salva com sucesso!', 'success');
+        }
+        
+        function loadVehicles() {
+            const vehicleSelect = document.getElementById('vehicle');
+            const vehicleList = document.getElementById('vehicleList');
+            
+            // Limpar selects
+            vehicleSelect.innerHTML = '<option value="">Selecione um veículo</option>';
+            vehicleList.innerHTML = '';
+            
+            if (vehicles.length === 0) {
+                vehicleList.innerHTML = `
+                    <div class="empty-state">
+                        <p>Nenhum veículo cadastrado</p>
+                        <p>Adicione seu primeiro veículo!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Popular select de veículos
+            vehicles.forEach(vehicle => {
+                const option = document.createElement('option');
+                option.value = vehicle.id;
+                option.textContent = vehicle.name;
+                vehicleSelect.appendChild(option);
+            });
+            
+            // Popular lista de veículos
+            vehicles.forEach(vehicle => {
+                const vehicleItem = document.createElement('div');
+                vehicleItem.className = 'vehicle-item';
+                vehicleItem.innerHTML = `
+                    <div>
+                        <strong>${vehicle.name}</strong>
+                        <div style="font-size: 0.9rem; color: #7f8c8d;">
+                            ${vehicle.fuelType} • ${vehicle.consumption} km/L
+                        </div>
+                    </div>
+                    <div class="history-actions">
+                        <button class="btn btn-warning edit-vehicle" data-id="${vehicle.id}">Editar</button>
+                        <button class="btn btn-danger delete-vehicle" data-id="${vehicle.id}">Excluir</button>
+                    </div>
+                `;
+                vehicleList.appendChild(vehicleItem);
+            });
+            
+            // Adicionar event listeners para os botões de editar e excluir
+            document.querySelectorAll('.edit-vehicle').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const vehicleId = this.getAttribute('data-id');
+                    editVehicle(vehicleId);
+                });
+            });
+            
+            document.querySelectorAll('.delete-vehicle').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const vehicleId = this.getAttribute('data-id');
+                    deleteVehicle(vehicleId);
+                });
+            });
+        }
+        
+        function loadTrips() {
+            const historyList = document.getElementById('historyList');
+            historyList.innerHTML = '';
+            
+            if (trips.length === 0) {
+                historyList.innerHTML = `
+                    <div class="empty-state">
+                        <p>Nenhuma viagem salva ainda</p>
+                        <p>Calcule e salve sua primeira viagem!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Ordenar viagens por data (mais recente primeiro)
+            trips.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            trips.forEach(trip => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'history-item';
+                historyItem.innerHTML = `
+                    <div class="history-info">
+                        <strong>${trip.vehicleName}</strong>
+                        <div style="font-size: 0.9rem; color: #7f8c8d;">
+                            ${formatDate(trip.date)} • ${trip.distance} km • ${trip.fuelType}
+                        </div>
+                    </div>
+                    <div>
+                        <strong>R$ ${trip.totalCost.toFixed(2)}</strong>
+                    </div>
+                `;
+                historyList.appendChild(historyItem);
+            });
+        }
+        
+        function showVehicleModal() {
+            document.getElementById('vehicleModal').style.display = 'flex';
+            document.getElementById('modalTitle').textContent = 'Adicionar Veículo';
+            document.getElementById('vehicleName').value = '';
+            document.getElementById('vehicleFuelType').value = 'gasolina';
+            document.getElementById('vehicleConsumption').value = '';
+            currentVehicleId = null;
+        }
+        
+        function hideVehicleModal() {
+            document.getElementById('vehicleModal').style.display = 'none';
+        }
+        
+        function editVehicle(vehicleId) {
+            const vehicle = vehicles.find(v => v.id == vehicleId);
+            if (vehicle) {
+                document.getElementById('vehicleModal').style.display = 'flex';
+                document.getElementById('modalTitle').textContent = 'Editar Veículo';
+                document.getElementById('vehicleName').value = vehicle.name;
+                document.getElementById('vehicleFuelType').value = vehicle.fuelType;
+                document.getElementById('vehicleConsumption').value = vehicle.consumption;
+                currentVehicleId = vehicleId;
+            }
+        }
+        
+        function deleteVehicle(vehicleId) {
+            if (confirm('Tem certeza que deseja excluir este veículo?')) {
+                vehicles = vehicles.filter(v => v.id != vehicleId);
+                localStorage.setItem('vehicles', JSON.stringify(vehicles));
+                loadVehicles();
+                showNotification('Veículo excluído com sucesso', 'success');
+            }
+        }
+        
+        function saveVehicle() {
+            const name = document.getElementById('vehicleName').value;
+            const fuelType = document.getElementById('vehicleFuelType').value;
+            const consumption = parseFloat(document.getElementById('vehicleConsumption').value);
+            
+            if (!name || !consumption) {
+                showNotification('Preencha todos os campos', 'error');
+                return;
+            }
+            
+            if (currentVehicleId) {
+                // Editar veículo existente
+                const vehicleIndex = vehicles.findIndex(v => v.id == currentVehicleId);
+                if (vehicleIndex !== -1) {
+                    vehicles[vehicleIndex] = {
+                        id: currentVehicleId,
+                        name,
+                        fuelType,
+                        consumption
+                    };
+                }
+            } else {
+                // Adicionar novo veículo
+                const newVehicle = {
+                    id: Date.now(),
+                    name,
+                    fuelType,
+                    consumption
+                };
+                vehicles.push(newVehicle);
+            }
+            
+            // Salvar e atualizar
+            localStorage.setItem('vehicles', JSON.stringify(vehicles));
+            loadVehicles();
+            hideVehicleModal();
+            showNotification('Veículo salvo com sucesso', 'success');
+        }
+        
+        function updateComparison() {
+            const distance = parseFloat(document.getElementById('distance').value);
+            const consumption = parseFloat(document.getElementById('consumption').value);
+            
+            if (!distance || !consumption) return;
+            
+            const fuelPrices = JSON.parse(localStorage.getItem('fuelPrices'));
+            const comparisonTable = document.getElementById('comparisonTable');
+            comparisonTable.innerHTML = '';
+            
+            const fuelTypes = [
+                { id: 'gasolina', name: 'Gasolina' },
+                { id: 'etanol', name: 'Etanol' },
+                { id: 'diesel', name: 'Diesel' },
+                { id: 'gnv', name: 'GNV' }
+            ];
+            
+            let costs = [];
+            let minCost = Infinity;
+            
+            fuelTypes.forEach(fuel => {
+                const price = fuelPrices[fuel.id];
+                const fuelNeeded = distance / consumption;
+                const cost = fuelNeeded * price;
+                
+                costs.push({
+                    type: fuel.name,
+                    price: price,
+                    cost: cost
+                });
+                
+                if (cost < minCost) minCost = cost;
+            });
+            
+            // Atualizar tabela
+            costs.forEach(item => {
+                const economy = item.cost - minCost;
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.type}</td>
+                    <td>R$ ${item.price.toFixed(2)}</td>
+                    <td>R$ ${item.cost.toFixed(2)}</td>
+                    <td>${economy > 0 ? `+R$ ${economy.toFixed(2)}` : 'Melhor opção'}</td>
+                `;
+                comparisonTable.appendChild(row);
+            });
+            
+            // Atualizar gráfico
+            updateComparisonChart(costs);
+        }
+        
+        function updateComparisonChart(costs) {
+            const ctx = document.getElementById('comparisonChart').getContext('2d');
+            
+            // Destruir gráfico anterior se existir
+            if (window.comparisonChart) {
+                window.comparisonChart.destroy();
+            }
+            
+            window.comparisonChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: costs.map(item => item.type),
+                    datasets: [{
+                        label: 'Custo Total (R$)',
+                        data: costs.map(item => item.cost),
+                        backgroundColor: [
+                            'rgba(52, 152, 219, 0.7)',
+                            'rgba(46, 204, 113, 0.7)',
+                            'rgba(155, 89, 182, 0.7)',
+                            'rgba(241, 196, 15, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(52, 152, 219, 1)',
+                            'rgba(46, 204, 113, 1)',
+                            'rgba(155, 89, 182, 1)',
+                            'rgba(241, 196, 15, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Custo (R$)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function updateReports() {
+            // Atualizar estatísticas
+            document.getElementById('totalTrips').textContent = trips.length;
+            
+            const totalDistance = trips.reduce((sum, trip) => sum + trip.distance, 0);
+            document.getElementById('totalDistance').textContent = `${totalDistance.toFixed(2)} km`;
+            
+            const totalSpent = trips.reduce((sum, trip) => sum + trip.totalCost, 0);
+            document.getElementById('totalSpent').textContent = `R$ ${totalSpent.toFixed(2)}`;
+            
+            const avgCost = trips.length > 0 ? totalSpent / trips.length : 0;
+            document.getElementById('avgCost').textContent = `R$ ${avgCost.toFixed(2)}`;
+            
+            // Atualizar gráfico de relatórios
+            updateReportsChart();
+        }
+        
+        function updateReportsChart() {
+            const ctx = document.getElementById('reportsChart').getContext('2d');
+            
+            // Agrupar viagens por mês
+            const monthlyData = {};
+            trips.forEach(trip => {
+                const date = new Date(trip.date);
+                const monthYear = `${date.getMonth()+1}/${date.getFullYear()}`;
+                
+                if (!monthlyData[monthYear]) {
+                    monthlyData[monthYear] = {
+                        count: 0,
+                        distance: 0,
+                        cost: 0
+                    };
+                }
+                
+                monthlyData[monthYear].count++;
+                monthlyData[monthYear].distance += trip.distance;
+                monthlyData[monthYear].cost += trip.totalCost;
+            });
+            
+            const labels = Object.keys(monthlyData);
+            const costData = labels.map(label => monthlyData[label].cost);
+            const distanceData = labels.map(label => monthlyData[label].distance);
+            
+            // Destruir gráfico anterior se existir
+            if (window.reportsChart) {
+                window.reportsChart.destroy();
+            }
+            
+            window.reportsChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Custo Total (R$)',
+                            data: costData,
+                            borderColor: 'rgba(52, 152, 219, 1)',
+                            backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                            yAxisID: 'y',
+                            fill: true
+                        },
+                        {
+                            label: 'Distância (km)',
+                            data: distanceData,
+                            borderColor: 'rgba(46, 204, 113, 1)',
+                            backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                            yAxisID: 'y1',
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Custo (R$)'
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Distância (km)'
+                            },
+                            grid: {
+                                drawOnChartArea: false,
+                            },
+                        }
+                    }
+                }
+            });
+        }
+        
+        function showNotification(message, type) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+        
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('pt-BR') + ' ' + date.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
+        }
+    </script>
+</body>
+</html>
